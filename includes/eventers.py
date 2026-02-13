@@ -4,7 +4,7 @@
 
 from typing import Callable, Tuple, Any, List
 from dataclasses import dataclass
-from includes.models import MessageInfo
+from .models import MessageInfo
 import re
 
 

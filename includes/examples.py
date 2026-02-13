@@ -7,6 +7,7 @@ from includes.bot import Bot
 from includes.eventers import Receive, When, Condition
 from includes.models import MessageInfo, CQCode, MessageBuilder
 import config as config
+import inspect
 
 # ============================================
 # 初始化 Bot
@@ -297,20 +298,20 @@ def handle_ban_command(bot_instance: Bot, info: MessageInfo):
 # 主程序
 # ============================================
 
-if __name__ == "__main__":
-    print("机器人启动中...")
-    
-    # 注册所有处理器到 bot
-    bot.register_message_handler(all_message)
-    bot.register_message_handler(help_command)
-    bot.register_message_handler(echo_command)
-    bot.register_message_handler(group_command)
-    bot.register_message_handler(private_message)
-    bot.register_message_handler(regex_message)
-    bot.register_message_handler(cq_code_message)
-    bot.register_message_handler(keyword_message)
-    bot.register_message_handler(user_info_command)
-    bot.register_message_handler(admin_command)
-    
-    # 启动 bot（阻塞式）
-    bot.run()
+
+print("机器人启动中...")
+
+# 注册所有处理器到 bot
+bot.register_message_handler(all_message)
+bot.register_message_handler(help_command)
+bot.register_message_handler(echo_command)
+bot.register_message_handler(group_command)
+bot.register_message_handler(private_message)
+bot.register_message_handler(regex_message)
+bot.register_message_handler(cq_code_message)
+bot.register_message_handler(keyword_message)
+bot.register_message_handler(user_info_command)
+bot.register_message_handler(admin_command)
+
+# 启动 bot（阻塞式）
+bot.run()
