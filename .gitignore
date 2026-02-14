@@ -46,3 +46,5 @@ data/
 
 # Config (if you have sensitive data)
 # config.local.py
+
+configuration.toml
