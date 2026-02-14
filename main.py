@@ -76,7 +76,7 @@ def should_bot_speak(
             rate *= 0.1
         elif delta < 120:
             rate *= 0.4
-    print("       - Rate delta: " + _delta.__str__())
+    print("        - Rate delta: " + _delta.__str__())
 
 
     # ===== 群活跃度惩罚 =====
@@ -92,13 +92,18 @@ def should_bot_speak(
 
     # ===== 随机抖动 =====
     rate *= random.uniform(0.7, 1.3)
-    print("       - Random change: " + rate.__str__())
+    print("        - Random change: " + rate.__str__())
 
     # ===== 限制上下界 =====
     rate = max(0.0, min(rate, 0.95))
-    print("       - Final: " + rate.__str__())
+    print("        - Final: " + rate.__str__())
 
-    return random.random() < rate
+    join_conversation = random.random() < rate
+    if join_conversation:
+        print("        - SPEAK")
+    else:
+        print("        - Will not speak")
+    return join_conversation
 
 def get_memories_doc():
     return open("./data/botmemories.ign", "r+")
