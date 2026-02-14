@@ -48,3 +48,4 @@ data/
 # config.local.py
 
 configuration.toml
+*.ign

@@ -212,5 +212,10 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
     # 处理 AI 回复
     final_content = response.choices[0].message.content
 
-    if bot_instance.send_group_msg(event.group_id, final_content) < 0: #type:ignore
-        bot_instance.send_group_msg(event.group_id, "FAILED TO CALL.")
+    bot_instance.send_group_msg(event.group_id, final_content)
+
+print("TLoH Bot 2")
+print(":: Bot 正在注册消息监听器")
+bot.register_message_handler(all_message)
+print(":: Bot 启动中...")
+bot.run()
