@@ -40,11 +40,13 @@ def should_bot_speak(
         now = time.time()
 
     rate = base_rate
+    print("    :: Should Bot Speak Synthesizer")
 
     # ===== 关键词加权 =====
     keywords = {
         "bot": 0.6,
         "@": 0.6,
+        "at": 0.6,
         "ai": 0.15,
         "gpt": 0.15,
         "python": 0.15,
@@ -56,29 +58,45 @@ def should_bot_speak(
     }
 
     lower_msg = msg.lower()
+    global _b, _delta
+    _b = 0
     for k, bonus in keywords.items():
         if k in lower_msg:
             rate += bonus
+            _b += bonus
+
+    print("        - Rate bonus: " + _b.__str__())
 
     # ===== 冷却惩罚 =====
+    _delta = 0.0
     if last_bot_time is not None:
         delta = now - last_bot_time
+        _delta = delta
         if delta < 30:
             rate *= 0.1
         elif delta < 120:
             rate *= 0.4
+    print("       - Rate delta: " + _delta.__str__())
+
 
     # ===== 群活跃度惩罚 =====
+    global _hrate
+    _hrate = rate
     if recent_msg_count >= 6:
         rate *= 0.3
+        _hrate = _hrate - rate
     elif recent_msg_count <= 1:
         rate *= 1.5
+        _hrate = rate - _hrate
+    print("        - HRate: " +_hrate.__str__())
 
     # ===== 随机抖动 =====
     rate *= random.uniform(0.7, 1.3)
+    print("       - Random change: " + rate.__str__())
 
     # ===== 限制上下界 =====
     rate = max(0.0, min(rate, 0.95))
+    print("       - Final: " + rate.__str__())
 
     return random.random() < rate
 
@@ -141,6 +159,8 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
 
 其他人：“bot 你个废物”
 你：“😡”
+
+其他人：“”
 
 允许轻度阴阳怪气和调侃，但不能人身攻击。
 可以使用"老哥""兄弟""哥们"等称呼。
