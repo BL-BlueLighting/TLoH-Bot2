@@ -14,8 +14,10 @@ from .models import MessageInfo, EventData
 from .eventers import EventHandler, Receive#type:ignore
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="TIME: %(asctime)s | %(levelname)s | %(message)s"
+)
 
 @dataclass
 class ApiCall:
@@ -46,6 +48,7 @@ class Bot:
         self._echo_responses: Dict[str, asyncio.Future] = {}
         self._echo_counter = 0
         self._loop: asyncio.AbstractEventLoop | None = None
+        self.websocket = None  # 保存主 WebSocket 连接
         
     def register_message_handler(self, handler: EventHandler):
         """注册消息处理器"""
@@ -70,6 +73,7 @@ class Bot:
             self._loop = asyncio.get_event_loop()
             
             async with websockets.connect(self.ws_url) as websocket:
+                self.websocket = websocket  # 保存 WebSocket 连接
                 self.connected = True
                 logger.info(f"已连接到 {self.ws_url}")
                 
@@ -205,7 +209,7 @@ class Bot:
                 await self._ws_send_json(request, echo)
             
             # 等待响应（带超时）
-            response = await asyncio.wait_for(future, timeout=5.0)
+            response = await asyncio.wait_for(future, timeout=10.0)
             return response
         except asyncio.TimeoutError:
             logger.error(f"API 调用超时: {action}")
@@ -219,8 +223,14 @@ class Bot:
     async def _ws_send_json(self, data: Dict[str, Any], echo: str):
         """通过 WebSocket 发送 JSON 数据"""
         try:
-            async with websockets.connect(self.ws_url) as ws:
-                await ws.send(json.dumps(data))
+            if self.websocket is not None:
+                await self.websocket.send(json.dumps(data))
+            else:
+                logger.error(f"WebSocket 连接未建立或已关闭")
+                if echo in self._echo_responses:
+                    future = self._echo_responses[echo]
+                    if not future.done():
+                        future.set_exception(Exception("WebSocket 未连接"))
         except Exception as e:
             logger.error(f"WebSocket 发送失败: {e}")
             if echo in self._echo_responses:
@@ -251,7 +261,7 @@ class Bot:
                 loop
             )
             try:
-                response = future.result(timeout=5)
+                response = future.result(timeout=360)
             except Exception as e:
                 logger.error(f"API 调用失败: {e}")
                 response = {"status": "failed", "retcode": -1}
@@ -264,7 +274,7 @@ class Bot:
                         self._send_api_call(action, params),
                         loop
                     )
-                    response = future.result(timeout=5)
+                    response = future.result(timeout=10.0)
                 else:
                     response = asyncio.run(self._send_api_call(action, params))
             except RuntimeError:
@@ -298,7 +308,7 @@ class Bot:
                 }),
                 loop
             )
-            response = future.result(timeout=5)
+            response = future.result(timeout=360)
         else:
             # 尝试获取当前事件循环
             try:
@@ -312,7 +322,7 @@ class Bot:
                         }),
                         loop
                     )
-                    response = future.result(timeout=5)
+                    response = future.result(timeout=360)
                 else:
                     response = asyncio.run(self._send_api_call("send_private_msg", {
                         "user_id": user_id,
@@ -341,7 +351,7 @@ class Bot:
                 }),
                 loop
             )
-            response = future.result(timeout=5)
+            response = future.result(timeout=360)
         else:
             # 尝试获取当前事件循环
             try:
@@ -355,7 +365,7 @@ class Bot:
                         }),
                         loop
                     )
-                    response = future.result(timeout=5)
+                    response = future.result(timeout=360)
                 else:
                     response = asyncio.run(self._send_api_call("send_group_msg", {
                         "group_id": group_id,

@@ -76,13 +76,13 @@ class Received(WhenCondition):
 class GotCommand(WhenCondition):
     """条件：获取到特定命令"""
     
-    def __init__(self, name: str, prefix: str = "/"):
+    def __init__(self, name: str, prefix: str = "*"):
         """
         初始化命令条件
         
         Args:
             name: 命令名称
-            prefix: 命令前缀（默认 /）
+            prefix: 命令前缀（默认 *）
         """
         self.name = name
         self.prefix = prefix
