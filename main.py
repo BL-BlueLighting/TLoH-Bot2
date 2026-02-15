@@ -228,9 +228,13 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
     with open("./data/botmemories.ign", "r", encoding="utf-8") as doc:
         memories = json.load(doc)
         group_mem = extract_mem_by_group_id(memories, event.group_id.__str__())
+    
+    with open("./allpre.deepseek.preData", "r", encoding="utf-8") as doc:
+        if doc.readlines() [1:5] != group_mem [1:5]:
+            group_mem = doc.readlines() + group_mem
 
     if len(group_mem) >= 6000:
-        group_mem = group_mem[-6000:]
+        group_mem = group_mem[6000:]
 
     # save memories
     pack_memories(event.group_id.__str__(), group_mem)
