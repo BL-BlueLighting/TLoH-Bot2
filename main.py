@@ -46,7 +46,7 @@ def should_bot_speak(
     keywords = {
         "bot": 0.6,
         "@": 0.6,
-        "at": 0.6,
+        "at": 100000000, #被at 100% 回复
         "ai": 0.15,
         "gpt": 0.15,
         "python": 0.15,
@@ -224,6 +224,38 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
 记住：专注于真正的参与，而不是随意言语的人工标记。目标是真实的对话，而不是表演性的非正式性。
 
 将每次互动视为一次真正的对话，而不是一项需要完成的任务。
+
+你可以通过换行来发送多行消息。但 BOTCALL 的下一句和其本身会连在一起。
+
+你可以通过：
+
+BOTCALL[send,emoji,[emoji_id]]: 回复表情。类似于：
+其他人：xxx
+[🤣 1] <- 这里的就是回复表情
+目前支持以下对应表：
+emoji_id 介绍
+xbs      续标识，即大红按钮/红按钮/拍按钮
+qu       蛆，即🐛<-这个表情包
+sugar    糖，即🍬<-这个表情包
+
+BOTCALL[msg,reply,[message_id]]: 回复消息。
+message_id = 消息中 (MessageId) 后面的那部分
+
+BOTCALL[msg,recall,[message_id]]: 撤回消息。(危险操作，不要常用)
+message_id = 消息中 (MessageId) 后面的那部分
+
+BOTCALL[msg,essence,[message_id]]: 精华消息。(危险操作，不要常用)
+message_id = 消息中 (MessageId) 后面的那部分
+
+BOTCALL[send,mute,[user_id]]: 禁言用户。
+通常用作警告/娱乐，在禁言后会再次解开禁言。
+
+所有函数必须单独一行，比如：
+
+BOTCALL[msg,reply,xxx]
+傻逼？
+
+（就会出现回复一条消息，然后下面写着"傻逼？"）
 """
     with open("./data/botmemories.ign", "r", encoding="utf-8") as doc:
         memories = json.load(doc)
@@ -240,7 +272,7 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
     pack_memories(event.group_id.__str__(), group_mem)
 
     # 这些 group_mem 的格式为：
-    # [user_id]: [content]
+    # [user_id]: [content] : (MessageId)[message id]
 
     # 提示词 gpt 写的不关我事
     global rmc, last_message_time, rmc_record_time
@@ -252,7 +284,7 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
             rmc = 0
             rmc_record_time = current_time
         rmc += 1
-        msg_str = f"{event.user_id.__str__()}: {msg}"
+        msg_str = f"{event.user_id.__str__()}: {msg} : (MessageId){event.message_id}"
         group_mem.append(msg_str)
         pack_memories(event.group_id.__str__(), group_mem)
         return
@@ -295,10 +327,58 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
     # 处理 AI 回复
     final_content = response.choices[0].message.content
 
-    group_mem.append(f"你：{final_content}")
-    pack_memories(event.group_id.__str__(), group_mem)
+    emojiIds = {
+        "xbs": 424,
+        "sugar": 147,
+        "qu": 128027
+    }
 
-    bot_instance.send_group_msg(event.group_id, final_content)
+    if type(final_content) == None:
+        bot_instance.send_group_msg(event.group_id, "ERROR: 无法连接至硅基流动 API。")
+    else:
+        # 解析函数
+        final_content = str(final_content)
+        if "BOTCALL[" in final_content:
+            # 检测到函数
+            lines = final_content.split("\n")
+            for line in lines:
+                if not "BOTCALL[" in line: continue
+                else:
+                    # 该行存在 BotCALL
+                    # begin interpret
+                    # 弃之，食参
+                    line = line.replace("BOTCALL[", "").replace("]", "")
+                    line = line.split(",")
+                    if line[0] == "send":
+                        # 发消息回应
+                        if line[1] == "emoji":
+                            bot_instance._call_api("set_msg_emoji_like", {
+                                "message_id": line[1],
+                                "emoji_id": emojiIds[line[2]],
+                                "set": True
+                            })
+                        elif line[1] == "mute":
+                            bot_instance.set_group_ban(event.group_id, event.user_id, 600)
+                            bot_instance.set_group_ban(event.group_id, event.user_id, 0)
+
+                    elif line[0] == "msg":
+                        # 回复消息
+                        if line[1] == "reply":
+                            final_content = MessageBuilder()\
+                                .add(CQCode.reply(int(line[2])))\
+                                .add(final_content)
+                        elif line[1] == "recall":
+                            bot_instance.delete_msg(int(line[2]))
+                        elif line[1] == "essence":
+                            bot_instance._call_api("set_essence_msg", {
+                                "message_id": line[2]
+                            })
+                    
+
+        group_mem.append(f"你：{final_content}")
+        pack_memories(event.group_id.__str__(), group_mem)
+
+        bot_instance.send_group_msg(event.group_id, final_content)#type:ignore
 
 print("TLoH Bot 2")
 print(":: Bot 正在注册消息监听器")
