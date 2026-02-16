@@ -378,7 +378,10 @@ BOTCALL[msg,reply,xxx]
         group_mem.append(f"你：{final_content}")
         pack_memories(event.group_id.__str__(), group_mem)
 
-        bot_instance.send_group_msg(event.group_id, final_content)#type:ignore
+        final_content = final_content.__str__().split("\n\n")
+        for line in final_content:
+            if not "BOTCALL[" in line:
+                bot_instance.send_group_msg(event.group_id, line)#type:ignore
 
 print("TLoH Bot 2")
 print(":: Bot 正在注册消息监听器")
