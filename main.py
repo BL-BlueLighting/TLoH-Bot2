@@ -277,6 +277,10 @@ BOTCALL[msg,reply,xxx]
     # 提示词 gpt 写的不关我事
     global rmc, last_message_time, rmc_record_time
     
+    if len(msg) > 600: # 大于六百字直接触发自保
+        bot_instance.send_group_msg(event.group_id, "[ 消息过长 ]")
+        return
+
     # 检查是否需要 bot 发言
     if not should_bot_speak(msg, last_bot_time=last_message_time) and not "FORCESPEAK" in msg:
         current_time = datetime.datetime.now()
