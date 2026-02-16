@@ -295,6 +295,9 @@ def handle_all_messages(bot_instance: Bot, event: MessageInfo):
     # 处理 AI 回复
     final_content = response.choices[0].message.content
 
+    group_mem.append(f"你：{final_content}")
+    pack_memories(event.group_id.__str__(), group_mem)
+
     bot_instance.send_group_msg(event.group_id, final_content)
 
 print("TLoH Bot 2")
